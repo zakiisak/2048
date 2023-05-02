@@ -112,8 +112,7 @@
 
             draw() {
 
-                if(this.showDelay > 0)
-                {
+                if (this.showDelay > 0) {
                     this.showDelay -= deltaTime;
                     return;
                 }
@@ -124,22 +123,21 @@
                 //Update scale percentage
                 this.scalePercentage += (1.0 - this.scalePercentage) * deltaTime * 16;
 
-                if(this.scalePercentage > 1)
-                {
+                if (this.scalePercentage > 1) {
                     this.scalePercentage = 1;
                 }
-                
+
 
                 //Adjust the font size according to the number
                 let yOffset = 0;
 
                 let fontSize = 42;
-                
-                if(this.number > 100000)
+
+                if (this.number > 100000)
                     fontSize = 22;
-                else if(this.number > 1000)
+                else if (this.number > 1000)
                     fontSize = 32;
-                
+
                 context.font = "bold " + fontSize * this.scalePercentage + "px Montserrat, Arial";
                 context.fillStyle = this.getBoxColor();
 
@@ -198,7 +196,7 @@
         }
 
         //variables used for checking for game over
-        let stuckVars = { '10': false, '-10': false, '01': false, '0-1': false}
+        let stuckVars = { '10': false, '-10': false, '01': false, '0-1': false }
         let gameover = false;
 
         function moveBoard(xdir, ydir) {
@@ -280,34 +278,29 @@
 
             if (isBoardFull() == false)
                 putRandomCellOnBoard().showDelay = 0.25;
-            
-            if(hasAnyCellMoved == false)
-            {
+
+            if (hasAnyCellMoved == false) {
                 let stuckKey = xdir + "" + ydir;
 
                 stuckVars[stuckKey] = true;
 
                 let stuck = true;
                 console.log(stuckVars)
-                for(key of Object.keys(stuckVars))
-                {
-                    if(stuckVars[key] == false)
-                    {
+                for (key of Object.keys(stuckVars)) {
+                    if (stuckVars[key] == false) {
                         stuck = false;
                         break;
                     }
                 }
 
-                if(stuck)
-                {
+                if (stuck) {
                     console.log("game over!")
                     gameover = true;
                 }
 
             }
-            else 
-            {
-                for(key of Object.keys(stuckVars))
+            else {
+                for (key of Object.keys(stuckVars))
                     stuckVars[key] = false;
             }
 
@@ -331,6 +324,57 @@
             }
         });
 
+        //Swipe events
+        document.addEventListener('touchstart', handleTouchStart, false);
+        document.addEventListener('touchmove', handleTouchMove, false);
+
+        var xDown = null;
+        var yDown = null;
+
+        function getTouches(evt) {
+            return evt.touches ||             // browser API
+                evt.originalEvent.touches; // jQuery
+        }
+
+        function handleTouchStart(evt) {
+            const firstTouch = getTouches(evt)[0];
+            xDown = firstTouch.clientX;
+            yDown = firstTouch.clientY;
+        };
+
+        function handleTouchMove(evt) {
+            if (!xDown || !yDown) {
+                return;
+            }
+
+            var xUp = evt.touches[0].clientX;
+            var yUp = evt.touches[0].clientY;
+
+            var xDiff = xDown - xUp;
+            var yDiff = yDown - yUp;
+
+            if (Math.abs(xDiff) > Math.abs(yDiff)) {
+                if (xDiff > 0) {
+                    /* right swipe */
+                    moveBoard(1, 0);
+                } else {
+                    /* left swipe */
+                    moveBoard(-1, 0);
+                }
+            } else {
+                if (yDiff > 0) {
+                    /* down swipe */
+                    moveBoard(0, 1);
+                } else {
+                    /* up swipe */
+                    moveBoard(0, -1);
+                }
+            }
+            /* reset values */
+            xDown = null;
+            yDown = null;
+        };
+
         //Init and loop
         populateInitialCells();
         window.requestAnimationFrame(loop);
@@ -351,7 +395,7 @@
         let gameoverPercentage = 0;
         function drawGameover() {
             gameoverPercentage += (1.0 - gameoverPercentage) * deltaTime * 5;
-            if(gameoverPercentage > 1)
+            if (gameoverPercentage > 1)
                 gameoverPercentage = 1;
 
             let a = 0.75 * gameoverPercentage;
@@ -382,7 +426,7 @@
                 if (cells[i])
                     cells[i].draw();
             }
-            if(gameover)
+            if (gameover)
                 drawGameover();
 
             window.requestAnimationFrame(loop);
