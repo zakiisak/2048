@@ -34,14 +34,50 @@
     </div>
     </div>
     <script>
+        //Cells wide
         let cw = 4;
+
+        //Cells high
         let ch = 4;
-        let cl = cw * ch;
+
+        //Graphical size of each cell
         let cellSize = 96;
+
+        //The padding between the cells
         let padding = 8;
+
+        //The main container for the cells
         let cells = [];
+
+        //A helper variable used for animations
         let deltaTime = 0;
 
+        //How many cells to spawn when having done an action
+        let waveCellQuanity = 1;
+        
+        //Change the variables depending on the url search
+        const urlParams = new URLSearchParams(window.location.search);
+        if(urlParams.has('s'))
+        {
+            let s = +urlParams.get('s');;
+            cw = s;
+            ch = s;
+        }
+        if(urlParams.has('wcq'))
+        {
+            waveCellQuanity = +urlParams.get('wcq');
+        }
+        if(urlParams.has('cs'))
+        {
+            cellSize = +urlParams.get('cs');
+        }
+        if(urlParams.has('p'))
+        {
+            padding = +urlParams.get('p');
+        }
+
+        //A helper variable for knowing the length of the board - the 1d cells array
+        let cl = cw * ch;
 
         //Canvas stuff
         const canvas = document.getElementById("game");
@@ -50,7 +86,8 @@
         const context = canvas.getContext("2d");
         context.textAlign = "center";
 
-        //Game
+        //The only class used in this small game to represent each cell on the game.
+        //It takes care of the moving, and the visuals of the cell.
         class Cell {
             constructor(x, y) {
                 this.x = Math.floor(x);
@@ -100,14 +137,14 @@
                     return "#ffc107";
                 else if (this.number == 16384)
                     return "#ff9800";
-
                 else if (this.number == 32768)
                     return "#ff5722";
+                else return "#333";
 
             }
 
             getTextColor() {
-                return "white"
+                return "white";
             }
 
             draw() {
@@ -276,8 +313,13 @@
                 }
             }
 
-            if (isBoardFull() == false)
-                putRandomCellOnBoard().showDelay = 0.25;
+
+            for(let i = 0; i < waveCellQuanity; i++)
+            {
+                let newCell = putRandomCellOnBoard();
+                if(newCell)
+                    newCell.showDelay = 0.25;
+            }
 
             if (hasAnyCellMoved == false) {
                 let stuckKey = xdir + "" + ydir;
