@@ -168,12 +168,14 @@
                 //Adjust the font size according to the number
                 let yOffset = 0;
 
-                let fontSize = 42 / 96 * cellSize;
-
+                let fontSize = 42;
+                
                 if (this.number > 100000)
-                    fontSize = 22;
+                fontSize = 22;
                 else if (this.number > 1000)
-                    fontSize = 32;
+                fontSize = 32;
+                
+                fontSize = fontSize / 96 * cellSize;
 
                 context.font = "bold " + fontSize * this.scalePercentage + "px Montserrat, Arial";
                 context.fillStyle = this.getBoxColor();
