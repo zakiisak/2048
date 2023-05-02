@@ -355,19 +355,15 @@
 
             if (Math.abs(xDiff) > Math.abs(yDiff)) {
                 if (xDiff > 0) {
-                    /* right swipe */
-                    moveBoard(1, 0);
-                } else {
-                    /* left swipe */
                     moveBoard(-1, 0);
+                } else {
+                    moveBoard(1, 0);
                 }
             } else {
                 if (yDiff > 0) {
-                    /* down swipe */
-                    moveBoard(0, 1);
-                } else {
-                    /* up swipe */
                     moveBoard(0, -1);
+                } else {
+                    moveBoard(0, 1);
                 }
             }
             /* reset values */
