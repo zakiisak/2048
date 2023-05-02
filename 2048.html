@@ -1,0 +1,396 @@
+<!doctype html>
+<html>
+
+<head>
+    <style>
+        body {
+            margin: 8px;
+            background-color: #faf7e6;
+        }
+
+        h1 {
+            text-align: center;
+            font-family: Montserrat, Arial;
+        }
+
+        canvas {
+            margin: 0;
+            padding: 0;
+            background-color: #FEFBE9;
+            box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
+        }
+    </style>
+
+</head>
+
+<body>
+    <div style="display: flex; justify-content: center;">
+        <div style="height: calc(100vh - 16px); display: flex; align-items: center;">
+            <div>
+                <h1>2048</h1>
+                <canvas id="game"></canvas>
+            </div>
+        </div>
+    </div>
+    </div>
+    <script>
+        let cw = 4;
+        let ch = 4;
+        let cl = cw * ch;
+        let cellSize = 96;
+        let padding = 8;
+        let cells = [];
+        let deltaTime = 0;
+
+
+        //Canvas stuff
+        const canvas = document.getElementById("game");
+        canvas.width = padding + (cellSize + padding) * cw;
+        canvas.height = padding + (cellSize + padding) * ch;
+        const context = canvas.getContext("2d");
+        context.textAlign = "center";
+
+        //Game
+        class Cell {
+            constructor(x, y) {
+                this.x = Math.floor(x);
+                this.y = Math.floor(y);
+                this.number = 2;
+
+                this.animationPercentage = 0;
+                this.scalePercentage = 0;
+                this.showDelay = 0;
+                this.destX = this.x;
+                this.destY = this.y;
+                this.drawnX = this.x;
+                this.drawnY = this.y;
+
+            }
+
+            getBoxColor() {
+                if (this.number == 2)
+                    return "#f44336";
+                else if (this.number == 4)
+                    return "#e81e63";
+                else if (this.number == 8)
+                    return "#9c27b0";
+                else if (this.number == 16)
+                    return "#673ab7";
+                else if (this.number == 16)
+                    return "#3f51b5";
+
+                else if (this.number == 32)
+                    return "#2196f3";
+                else if (this.number == 64)
+                    return "#03a9f4";
+                else if (this.number == 128)
+                    return "#00bcd4";
+                else if (this.number == 256)
+                    return "#009688";
+                else if (this.number == 512)
+                    return "#4caf50";
+
+                else if (this.number == 1024)
+                    return "#8bc34a";
+                else if (this.number == 2048)
+                    return "#cddc39";
+                else if (this.number == 4096)
+                    return "#ffeb3b";
+                else if (this.number == 8192)
+                    return "#ffc107";
+                else if (this.number == 16384)
+                    return "#ff9800";
+
+                else if (this.number == 32768)
+                    return "#ff5722";
+
+            }
+
+            getTextColor() {
+                return "white"
+            }
+
+            draw() {
+
+                if(this.showDelay > 0)
+                {
+                    this.showDelay -= deltaTime;
+                    return;
+                }
+
+                this.drawnX += (this.destX - this.drawnX) * deltaTime * 16;
+                this.drawnY += (this.destY - this.drawnY) * deltaTime * 16;
+
+                //Update scale percentage
+                this.scalePercentage += (1.0 - this.scalePercentage) * deltaTime * 16;
+
+                if(this.scalePercentage > 1)
+                {
+                    this.scalePercentage = 1;
+                }
+                
+
+                //Adjust the font size according to the number
+                let yOffset = 0;
+
+                let fontSize = 42;
+                
+                if(this.number > 100000)
+                    fontSize = 22;
+                else if(this.number > 1000)
+                    fontSize = 32;
+                
+                context.font = "bold " + fontSize * this.scalePercentage + "px Montserrat, Arial";
+                context.fillStyle = this.getBoxColor();
+
+                let size = cellSize * this.scalePercentage;
+                let x = padding + this.drawnX * (cellSize + padding);
+                let y = padding + this.drawnY * (cellSize + padding);
+                context.fillRect(x + cellSize / 2 - size / 2, y + cellSize / 2 - size / 2, size, size);
+                context.fillStyle = this.getTextColor();
+                context.fillText("" + this.number, x + cellSize / 2, y + cellSize / 2 + 13);
+            }
+
+            moveTo(x, y) {
+                let currentIndex = this.x + this.y * cw;
+
+                this.x = x;
+                this.y = y;
+                this.destX = x;
+                this.destY = y;
+                cells[currentIndex] = null;
+
+                let newIndex = x + y * cw;
+                if (cells[newIndex])
+                    cells[newIndex].number += this.number;
+                else cells[newIndex] = this;
+
+            }
+        }
+
+        function populateInitialCells() {
+            for (let i = 0; i < 2; i++) {
+                putRandomCellOnBoard();
+            }
+        }
+
+        function isBoardFull() {
+            for (let i = 0; i < cl; i++) {
+                if (!cells[i]) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function putRandomCellOnBoard() {
+            if (isBoardFull())
+                return null;
+
+            while (true) {
+                let randomIndex = Math.floor(Math.random() * cl);
+                if (!cells[randomIndex]) {
+                    cells[randomIndex] = new Cell(randomIndex % cw, randomIndex / ch);
+                    return cells[randomIndex];
+                }
+            }
+            return null;
+        }
+
+        //variables used for checking for game over
+        let stuckVars = { '10': false, '-10': false, '01': false, '0-1': false}
+        let gameover = false;
+
+        function moveBoard(xdir, ydir) {
+
+            let startX = xdir > 0 ? (cw - 1) : 0;
+            let startY = ydir > 0 ? (ch - 1) : 0;
+
+            let loopEndX = xdir > 0 ? -1 : cw;
+            let loopEndY = ydir > 0 ? -1 : ch;
+
+            let endX = xdir > 0 ? cw : -1;
+            let endY = ydir > 0 ? ch : -1;
+
+
+            let xi = Math.sign(xdir);
+            let yi = Math.sign(ydir);
+
+            if (xi == 0)
+                xi = -1;
+            if (yi == 0)
+                yi = -1;
+
+            let boundaryX = endX - xi;
+            let boundaryY = endY - yi;
+
+
+            let hasAnyCellMoved = false;
+
+            for (let x = startX; x != loopEndX; x -= xi) {
+                for (let y = startY; y != loopEndY; y -= yi) {
+                    let ci = x + y * cw;
+                    if (!cells[ci])
+                        continue;
+
+                    let c = cells[ci];
+
+                    let cx = x + xdir;
+                    let cy = y + ydir;
+
+                    let hasMoved = false;
+
+                    while (cx >= 0 && cy >= 0 && cx < cw && cy < ch) {
+                        let oi = cx + cy * cw;
+                        if (!cells[oi]) {
+                            cx += xdir;
+                            cy += ydir;
+                        }
+                        else if (cells[oi].number == c.number) {
+                            break;
+                        }
+                        else {
+                            cx -= xdir;
+                            cy -= ydir;
+                            break;
+                        }
+                    }
+
+
+                    if (cx < 0)
+                        cx = 0;
+                    if (cx >= cw)
+                        cx = cw - 1;
+
+                    if (cy < 0)
+                        cy = 0;
+                    if (cy >= ch)
+                        cy = ch - 1;
+
+                    if (!cells[cx + cy * cw]) {
+                        c.moveTo(cx, cy);
+                        hasAnyCellMoved = true;
+                    }
+                    else if (cells[cx + cy * cw].number == c.number && !(cx == x && cy == y)) {
+                        c.moveTo(cx, cy);
+                        hasAnyCellMoved = true;
+                    }
+                }
+            }
+
+            if (isBoardFull() == false)
+                putRandomCellOnBoard().showDelay = 0.25;
+            
+            if(hasAnyCellMoved == false)
+            {
+                let stuckKey = xdir + "" + ydir;
+
+                stuckVars[stuckKey] = true;
+
+                let stuck = true;
+                console.log(stuckVars)
+                for(key of Object.keys(stuckVars))
+                {
+                    if(stuckVars[key] == false)
+                    {
+                        stuck = false;
+                        break;
+                    }
+                }
+
+                if(stuck)
+                {
+                    console.log("game over!")
+                    gameover = true;
+                }
+
+            }
+            else 
+            {
+                for(key of Object.keys(stuckVars))
+                    stuckVars[key] = false;
+            }
+
+        }
+
+
+
+        //Events
+        window.addEventListener('keydown', (e) => {
+            if (e.key == 'w' || e.key == 'ArrowUp') {
+                moveBoard(0, -1);
+            }
+            if (e.key == 's' || e.key == 'ArrowDown') {
+                moveBoard(0, 1);
+            }
+            if (e.key == 'a' || e.key == 'ArrowLeft') {
+                moveBoard(-1, 0);
+            }
+            if (e.key == 'd' || e.key == 'ArrowRight') {
+                moveBoard(1, 0);
+            }
+        });
+
+        //Init and loop
+        populateInitialCells();
+        window.requestAnimationFrame(loop);
+
+        function drawCellSockets() {
+            context.fillStyle = "#E1EEDD"
+            for (let x = 0; x < cw; x++) {
+                for (let y = 0; y < ch; y++) {
+                    let xp = padding + x * (cellSize + padding);
+                    let yp = padding + y * (cellSize + padding);
+                    context.fillRect(xp, yp, cellSize, cellSize);
+                }
+            }
+        }
+
+        let lastUpdate = Date.now();
+
+        let gameoverPercentage = 0;
+        function drawGameover() {
+            gameoverPercentage += (1.0 - gameoverPercentage) * deltaTime * 5;
+            if(gameoverPercentage > 1)
+                gameoverPercentage = 1;
+
+            let a = 0.75 * gameoverPercentage;
+
+            context.fillStyle = "rgba(255, 255, 255, " + a + ")";
+            context.fillRect(0, 0, canvas.width, canvas.height);
+
+            context.fillStyle = "black";
+            let gameoverText = "Gameover!";
+            let bounds = context.measureText(gameoverText);
+
+
+            let fontSize = 42 * gameoverPercentage;
+
+            context.font = "bold " + fontSize + "px Montserrat, Arial";
+            context.fillText(gameoverText, canvas.width / 2, canvas.height / 2);
+        }
+
+        function loop() {
+            let now = Date.now();
+            deltaTime = 1.0 / (1000.0 / (now - lastUpdate));
+            lastUpdate = now;
+
+            context.clearRect(0, 0, canvas.width, canvas.height);
+
+            drawCellSockets();
+            for (let i = 0; i < cl; i++) {
+                if (cells[i])
+                    cells[i].draw();
+            }
+            if(gameover)
+                drawGameover();
+
+            window.requestAnimationFrame(loop);
+        }
+
+
+    </script>
+
+</body>
+
+</html>
