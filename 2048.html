@@ -131,7 +131,7 @@
                 //Adjust the font size according to the number
                 let yOffset = 0;
 
-                let fontSize = 42;
+                let fontSize = 42 / 96 * cellSize;
 
                 if (this.number > 100000)
                     fontSize = 22;
@@ -146,7 +146,7 @@
                 let y = padding + this.drawnY * (cellSize + padding);
                 context.fillRect(x + cellSize / 2 - size / 2, y + cellSize / 2 - size / 2, size, size);
                 context.fillStyle = this.getTextColor();
-                context.fillText("" + this.number, x + cellSize / 2, y + cellSize / 2 + 13);
+                context.fillText("" + this.number, x + cellSize / 2, y + cellSize / 2 + fontSize / 3);
             }
 
             moveTo(x, y) {
@@ -404,7 +404,7 @@
             let bounds = context.measureText(gameoverText);
 
 
-            let fontSize = 42 * gameoverPercentage;
+            let fontSize = 42 / 96 * cellSize * gameoverPercentage;
 
             context.font = "bold " + fontSize + "px Montserrat, Arial";
             context.fillText(gameoverText, canvas.width / 2, canvas.height / 2);
