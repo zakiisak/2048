@@ -354,16 +354,17 @@
 
         //Events
         window.addEventListener('keydown', (e) => {
-            if (e.key == 'w' || e.key == 'ArrowUp') {
+            let key = e.key.toLowerCase();
+            if (key.toLowerCase() == 'w' || e.key == 'ArrowUp') {
                 moveBoard(0, -1);
             }
-            if (e.key == 's' || e.key == 'ArrowDown') {
+            if (key == 's' || e.key == 'ArrowDown') {
                 moveBoard(0, 1);
             }
-            if (e.key == 'a' || e.key == 'ArrowLeft') {
+            if (key == 'a' || e.key == 'ArrowLeft') {
                 moveBoard(-1, 0);
             }
-            if (e.key == 'd' || e.key == 'ArrowRight') {
+            if (key == 'd' || e.key == 'ArrowRight') {
                 moveBoard(1, 0);
             }
         });
